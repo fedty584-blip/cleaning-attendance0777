@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบเช็คชื่อทำเวรรักษาความสะอาดประจำวัน</title>
+  
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Header / Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="bg-gradient-to-tr from-emerald-600 to-teal-500 p-2.5 rounded-xl text-white shadow-md shadow-emerald-200">
+            <i data-lucide="sparkles" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">ระบบเช็คชื่อทำเวรรักษาความสะอาด</h1>
+            <p class="text-xs text-slate-500 hidden sm:block">บันทึก สถิติ และจัดการทำเวรประจำวัน (ไม่รวมวันเสาร์-อาทิตย์ และวันหยุดราชการ)</p>
+          </div>
+        </div>
+
+        <!-- Action / Admin Button -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <button id="adminToggleBtn" onclick="toggleAdminModal()" class="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+            <span id="adminBtnText">ไอที แอดมิน (gun)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
+
+    <!-- Filter & Date Selector Bar -->
+    <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <!-- Date Picker & Mode -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+          <button id="tabDaily" onclick="switchView('daily')" class="px-4 py-2 text-sm font-medium rounded-lg bg-white shadow-sm text-slate-900 transition flex items-center space-x-2">
+            <i data-lucide="calendar-check" class="w-4 h-4 text-emerald-600"></i>
+            <span>เช็ครายวัน</span>
+          </button>
+          <button id="tabMonthly" onclick="switchView('monthly')" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center space-x-2">
+            <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-600"></i>
+            <span>สถิติประจำเดือน</span>
+          </button>
+        </div>
+
+        <!-- Daily Date Picker Input -->
+        <div id="datePickerContainer" class="flex items-center space-x-2">
+          <label for="currentDate" class="text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:block">วันที่:</label>
+          <input type="date" id="currentDate" onchange="onDateChange()" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-2.5 font-medium shadow-sm">
+        </div>
+
+        <!-- Monthly Selector (Month & Year) -->
+        <div id="monthPickerContainer" class="hidden flex items-center space-x-2">
+          <label for="selectMonth" class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ประจำเดือน:</label>
+          <select id="selectMonth" onchange="renderMonthlyView()" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-2.5 font-medium shadow-sm">
+            <option value="0">มกราคม</option>
+            <option value="1">กุมภาพันธ์</option>
+            <option value="2">มีนาคม</option>
+            <option value="3">เมษายน</option>
+            <option value="4">พฤษภาคม</option>
+            <option value="5">มิถุนายน</option>
+            <option value="6">กรกฎาคม</option>
+            <option value="7">สิงหาคม</option>
+            <option value="8">กันยายน</option>
+            <option value="9">ตุลาคม</option>
+            <option value="10">พฤศจิกายน</option>
+            <option value="11">ธันวาคม</option>
+          </select>
+          <select id="selectYear" onchange="renderMonthlyView()" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 p-2.5 font-medium shadow-sm">
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons for Daily View -->
+      <div id="dailyActions" class="flex items-center space-x-2 self-end md:self-auto">
+        <button onclick="markAll(true)" class="px-3 py-2 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 flex items-center space-x-1">
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+          <span>ติ๊กทำเวรทั้งหมด</span>
+        </button>
+        <button onclick="markAll(false)" class="px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition border border-slate-300 flex items-center space-x-1">
+          <i data-lucide="x-circle" class="w-4 h-4"></i>
+          <span>ยกเลิกทั้งหมด</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Banner Status Alert (Weekend / Holiday Notice) -->
+    <div id="holidayBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center space-x-3 text-amber-800 shadow-sm">
+      <div class="p-2 bg-amber-100 rounded-xl text-amber-700 flex-shrink-0">
+        <i data-lucide="calendar-x" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h4 id="holidayTitle" class="font-bold text-sm">วันหยุดงดเช็คเวร</h4>
+        <p id="holidayDesc" class="text-xs text-amber-700">วันนี้ตรงกับวันเสาร์-อาทิตย์ หรือวันหยุดนักขัตฤกษ์ ระบบจะไม่นำมาคำนวณวันทำการ</p>
+      </div>
+    </div>
+
+    <!-- VIEW 1: DAILY ATTENDANCE (ตารางรายวัน) -->
+    <div id="dailyView" class="space-y-6">
+      <!-- Stats Brief Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">นักเรียนทั้งหมด</p>
+            <p id="statTotal" class="text-xl font-bold text-slate-800">34</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+            <i data-lucide="check-square" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">ทำเวรแล้ว</p>
+            <p id="statDone" class="text-xl font-bold text-emerald-600">0</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+            <i data-lucide="square" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">ยังไม่ได้ติ๊ก</p>
+            <p id="statPending" class="text-xl font-bold text-rose-500">34</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
+            <i data-lucide="percent" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">อัตราทำเวรประจำวัน</p>
+            <p id="statPercent" class="text-xl font-bold text-purple-600">0%</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student List Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+            <i data-lucide="list-checks" class="w-5 h-5 text-emerald-600"></i>
+            <span>รายการเช็คชื่อทำเวรประจำวัน (<span id="displaySelectedDate"></span>)</span>
+          </h3>
+          <span class="text-xs text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">ติ๊กที่ช่อง หรือคลิกแถวเพื่อเปลี่ยนสถานะ</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-100/70 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th class="py-3 px-4 w-16 text-center">ลำดับ</th>
+                <th class="py-3 px-4 w-28">รหัสประจำตัว</th>
+                <th class="py-3 px-4">ชื่อ - นามสกุล</th>
+                <th class="py-3 px-4 w-36 text-center">ทำเวรเรียบร้อย (ติ๊กถูก)</th>
+                <th class="py-3 px-4">หมายเหตุ / โซนทำความสะอาด</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody" class="divide-y divide-slate-100 text-sm">
+              <!-- Render by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: MONTHLY REPORT & STATISTICS (สถิติประจำเดือน) -->
+    <div id="monthlyView" class="hidden space-y-6">
+      <!-- Monthly Summary Overview -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Monthly Metrics -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2 border-b border-slate-100 pb-3">
+            <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i>
+            <span>ภาพรวมการทำเวรเดือน <span id="monthlyTitleText"></span></span>
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span class="text-xs font-medium text-slate-600">วันทำการจริง (ไม่รวมเสาร์-อาทิตย์ & นักขัตฤกษ์)</span>
+              <span id="monthlyWorkingDays" class="font-bold text-slate-800">0 วัน</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-emerald-50 rounded-xl">
+              <span class="text-xs font-medium text-emerald-800">จำนวนการปฏิบัติเวรรวมทั้งหมด</span>
+              <span id="monthlyTotalChecked" class="font-bold text-emerald-700">0 ครั้ง</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-indigo-50 rounded-xl">
+              <span class="text-xs font-medium text-indigo-800">เปอร์เซ็นต์ทำเวรเฉลี่ยทั้งห้อง</span>
+              <span id="monthlyAvgPercent" class="font-bold text-indigo-700">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Doughnut Chart -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm md:col-span-2 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="flex-1 space-y-2">
+            <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-indigo-600"></i>
+              <span>สัดส่วนสถิติการทำเวรความสะอาด</span>
+            </h3>
+            <p class="text-xs text-slate-500">แสดงภาพรวมการปฏิบัติหน้าที่เวรรักษาความสะอาดเทียบกับเป้าหมายประจำเดือน</p>
+          </div>
+          <div class="w-48 h-48 relative flex-shrink-0">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Detailed Student Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+          <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+            <i data-lucide="table" class="w-5 h-5 text-indigo-600"></i>
+            <span>ตารางสรุปการมาทำเวรรายบุคคล (ประจำเดือน)</span>
+          </h3>
+          <span class="text-xs text-slate-500">รวม 34 คน</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-100/70 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th class="py-3 px-4 w-16 text-center">ลำดับ</th>
+                <th class="py-3 px-4 w-28">รหัสประจำตัว</th>
+                <th class="py-3 px-4">ชื่อ - นามสกุล</th>
+                <th class="py-3 px-4 text-center">จำนวนวันที่ทำเวร (วัน)</th>
+                <th class="py-3 px-4 text-center">วันทำการทั้งหมด</th>
+                <th class="py-3 px-4 text-center">อัตราการทำเวร (%)</th>
+                <th class="py-3 px-4 text-center">ประเมินผล</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyTableBody" class="divide-y divide-slate-100 text-sm">
+              <!-- Render by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- IT ADMIN MODAL (ล็อกอินด้วย gun / 11111111) -->
+  <div id="adminModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="shield-alert" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="font-bold text-base">ระบบจัดการไอที (IT Admin Panel)</h3>
+        </div>
+        <button onclick="toggleAdminModal()" class="text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-grow">
+        <!-- Section A: Admin Login Form (เมื่อยังไม่ได้ล็อกอิน) -->
+        <div id="adminLoginForm" class="space-y-4">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 text-xs">
+            <p class="font-semibold">โปรดกรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าสู่ระบบแอดมิน</p>
+            <p class="mt-1">Username: <code class="bg-white px-1.5 py-0.5 rounded border border-emerald-300 font-bold">gun</code> | Password: <code class="bg-white px-1.5 py-0.5 rounded border border-emerald-300 font-bold">11111111</code> (1 แปดตัว)</p>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อผู้ใช้งาน (Username):</label>
+              <input type="text" id="adminUser" placeholder="gun" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">รหัสผ่าน (Password):</label>
+              <input type="password" id="adminPass" placeholder="11111111" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-emerald-500 focus:border-emerald-500">
+            </div>
+            <p id="loginError" class="text-xs text-rose-600 font-medium hidden">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!</p>
+            <button onclick="loginAdmin()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition shadow-md shadow-emerald-200">
+              เข้าสู่ระบบแอดมิน
+            </button>
+          </div>
+        </div>
+
+        <!-- Section B: Admin Control Panel (เมื่อล็อกอินสำเร็จแล้ว) -->
+        <div id="adminPanelContent" class="hidden space-y-6">
+          <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 flex items-center space-x-1">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <span>เข้าสู่ระบบในชื่อ: Admin gun</span>
+            </span>
+            <button onclick="logoutAdmin()" class="text-xs text-rose-600 hover:underline font-medium">ออกจากระบบ</button>
+          </div>
+
+          <!-- Add / Manage Custom Holidays -->
+          <div class="space-y-3">
+            <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-1">
+              <i data-lucide="calendar-plus" class="w-4 h-4 text-emerald-600"></i>
+              <span>จัดการวันหยุดราชการ / วันหยุดพิเศษเพิ่มเติมนอกจากเสาร์-อาทิตย์</span>
+            </h4>
+            <div class="flex gap-2">
+              <input type="date" id="newHolidayDate" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5">
+              <input type="text" id="newHolidayName" placeholder="ชื่อวันหยุด (เช่น วันปีใหม่)" class="flex-grow bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5">
+              <button onclick="addCustomHoliday()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition">เพิ่ม</button>
+            </div>
+            <div id="holidayList" class="space-y-1 max-h-36 overflow-y-auto text-xs">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <!-- Add New Student -->
+          <div class="space-y-3 pt-4 border-t border-slate-200">
+            <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-1">
+              <i data-lucide="user-plus" class="w-4 h-4 text-indigo-600"></i>
+              <span>เพิ่มรายชื่อนักเรียนทำเวร</span>
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input type="text" id="newStudentId" placeholder="รหัสประจำตัว (เช่น 32001)" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5">
+              <input type="text" id="newStudentName" placeholder="ชื่อ-นามสกุล" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5">
+              <button onclick="addStudent()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition">เพิ่มนักเรียน</button>
+            </div>
+          </div>
+
+          <!-- System Reset -->
+          <div class="pt-4 border-t border-slate-200">
+            <button onclick="resetSystemData()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs py-2.5 rounded-xl transition border border-rose-200 flex items-center justify-center space-x-1">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>รีเซ็ตกลับเป็นข้อมูลนักเรียนตั้งต้น (34 คน)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+    <p>© 2026 ระบบเช็คชื่อทำเวรรักษาความสะอาดรายวัน | พัฒนาสำหรับฝังใน Canva & GitHub Pages</p>
+  </footer>
+
+  <!-- Custom Scripts -->
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
